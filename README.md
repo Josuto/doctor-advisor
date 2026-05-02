@@ -14,6 +14,31 @@ The system main technologies are **Pydantic AI** for agent orchestration, **Pyda
 
 ---
 
+## Table of Contents
+
+- [System Architecture](#system-architecture)
+  - [Multi-Agent Orchestration](#multi-agent-orchestration)
+  - [Agent Details](#agent-details)
+  - [System Architecture Diagram](#system-architecture-diagram)
+  - [Project Structure](#project-structure)
+- [Tech Stack](#tech-stack)
+- [Testing](#testing)
+  - [Test Cases](#test-cases)
+  - [Running Tests](#running-tests)
+- [Running the Project](#running-the-project)
+  - [Prerequisites](#prerequisites)
+  - [Step 1: Install Dependencies](#step-1-install-dependencies)
+  - [Step 2: Setup the Insurance Directory Database](#step-2-setup-the-insurance-directory-database)
+  - [Step 3: Start Phoenix Observability](#step-3-start-phoenix-observability-optional-but-recommended)
+  - [Step 4: Run the Agent System](#step-4-run-the-agent-system)
+  - [Example Interaction](#example-interaction)
+  - [Monitoring with Phoenix](#monitoring-with-phoenix)
+- [Development Notes](#development-notes)
+- [Known Limitations](#known-limitations)
+- [Future Work](#future-work)
+
+---
+
 ## System Architecture
 
 ### Multi-Agent Orchestration
@@ -334,3 +359,63 @@ While the system is running (Step 4), open `http://localhost:6006` in your brows
   - Interactive UI for symptom input and doctor selection
   - Visual presentation of diagnostic matches with confidence scores
   - Progress indicators for long-running operations
+
+---
+
+## Future Work
+
+### 1. Multi-User Support with Authentication and Data Anonymization
+
+**Objective**: Enable concurrent multi-user access to the system while maintaining data privacy and user isolation.
+
+**Requirements**:
+- **User Authentication**: Implement login/session management (e.g., OAuth, JWT tokens) to identify and authenticate users
+- **Per-User Memory Isolation**: Replace the global `patient_memories.json` with per-user query history storage
+  - Associate each patient query with a unique user ID
+  - Ensure users can only access their own query history and recommendations
+- **Data Anonymization**: Enhance the existing Presidio integration to:
+  - Redact user-identifying information (names, contact details) before storing in shared systems
+  - Implement role-based access control (RBAC) to limit data visibility
+- **Session Management**: Track active user sessions, implement secure session timeouts, and audit access logs
+- **Database Refactoring**: Migrate from JSON file storage to a multi-tenant database (e.g., PostgreSQL with user-scoped queries)
+
+**Implementation Considerations**:
+- Use Pydantic AI's context injection to pass user identity through the agent pipeline
+- Implement encryption for sensitive user data at rest and in transit
+- Add audit logging for compliance (HIPAA, GDPR)
+
+### 2. Automatic Appointment Scheduling with Doctor Availability Management
+
+**Objective**: Extend the Appointment Requester Agent to automatically schedule appointments by checking doctor availability and booking time slots.
+
+**Workflow**:
+1. **Fetch Available Time Slots**: After doctor selection, query the doctor's calendar via MCP server
+2. **Present Options**: Display the next three available appointment time slots to the user
+3. **User Selection**: Allow patient to select one of the three offered times
+4. **Automatic Booking**: Create the appointment in the doctor's agenda through the MCP server
+
+#### Primary Challenge: Concurrent Appointment Handling
+- **Race Condition Prevention**: Use database-level locking or optimistic concurrency control when booking slots
+  - Implement version-based concurrency: Include a revision number in time slot data; increment on each booking
+  - Detect conflicts when multiple users attempt to book the same slot simultaneously
+- **Transaction Atomicity**: Ensure appointment creation is atomic (all-or-nothing) to prevent partial bookings
+- **Slot Reservation**: Implement a short-lived reservation mechanism to prevent slot double-booking during the selection period
+  - Reserve slots for 2-3 minutes while user makes decision
+  - Auto-release expired reservations
+  - Set reasonable timeouts for slot reservation and booking operations
+- **Conflict Resolution**: When booking fails due to conflicts:
+  - Fetch fresh availability and re-present options
+  - Implement exponential backoff for retries to avoid thundering herd
+- **Idempotency**: Use idempotent keys (e.g., `appointment_request_id`) to prevent duplicate bookings if requests are retried
+
+**Implementation Considerations**:
+- Use Pydantic AI's tool error handling to gracefully manage booking failures
+- Implement a state machine in the agent to track appointment booking progress
+- Add Phoenix tracing to monitor concurrent booking attempts and detect race conditions
+- Consider using a queue (e.g., Redis) for appointment requests if throughput becomes high
+- Extend the shared models to include `Appointment` with booking status tracking
+
+**Technical Challenges**:
+- **Scalability**: Supporting many concurrent users requires efficient locking and database indexing
+- **Network Failures**: Handle partial failures (e.g., slot reserved but booking fails)
+- **User Experience**: Balance automatic confirmation with explicit user consent for medical appointments
