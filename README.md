@@ -6,7 +6,7 @@ This project demonstrates a **multi-agent AI system** that helps people with med
 
 1. **Patient provides symptoms** → The system requests the patient to introduce their symptoms and stores the query
 2. **Symptoms Triage Agent** → Analyzes symptoms and generates a list of relevant diagnostics using retrieval-augmented generation (RAG)
-3. **Doctor Selector Agent** → Matches diagnostics to doctors from the patient's insurance network
+3. **Doctor Fetcher Agent** → Matches diagnostics to doctors from the patient's insurance network
 4. **Patient selects a doctor** → Interactive selection from recommended list
 5. **Appointment Requester Agent** → Generates an email template ready to send to the selected doctor
 
@@ -25,7 +25,7 @@ User Input (Symptoms)
   ↓
 [Symptoms Triage Agent] → Diagnostics
   ↓
-[Doctor Selector Agent] → Doctors
+[Doctor Fetcher Agent] → Doctors
   ↓
 [User Selection] → Chosen Doctor
   ↓
@@ -48,7 +48,7 @@ User Output
 - **Memory**: Stores de-identified patient queries in `patient_memories.json` (with PII redaction via Presidio)
 - **Testing**: Eval-driven with Pydantic Evals (`agents/symptoms_triage/evals.py` uses `LLMJudge` and the `EqualsExpected` built-in evaluators)
 
-**2. Doctor Selector Agent** (`agents/doctor_selector/`)
+**2. Doctor Fetcher Agent** (`agents/doctor_fetcher/`)
 - **Purpose**: Match diagnostics to appropriate doctors from the patient's insurance network
 - **Implementation**: Pydantic AI agent with Claude Sonnet 4.5
 - **MCP Integration**: Uses Model Context Protocol to communicate with insurance server
@@ -56,7 +56,7 @@ User Output
   - Retrieves doctor list filtered by insurance coverage and specialization
 - **Input**: `List[Diagnostic]` from symptoms triage agent
 - **Output**: `List[Doctor]` with name, specialization, and email
-- **Testing**: Eval-driven with Pydantic Evals (`agents/doctor_selector/evals.py` uses a `DoctorFieldsMatch` custom evaluator)
+- **Testing**: Eval-driven with Pydantic Evals (`agents/doctor_fetcher/evals.py` uses a `DoctorFieldsMatch` custom evaluator)
 
 **3. Appointment Requester Agent** (`agents/appointment_requester/`)
 - **Purpose**: Generate professional email content for appointment requests
@@ -103,9 +103,9 @@ capstone/
 │   │   ├── evals.py                   # Pydantic Evals test cases (LLMJudge)
 │   │   └── evals_memory.py            # Memory-specific evals
 │   │
-│   ├── doctor_selector/
+│   ├── doctor_fetcher/
 │   │   ├── __init__.py
-│   │   ├── main.py                    # Doctor selector agent
+│   │   ├── main.py                    # Doctor fetcher agent
 │   │   ├── mock_insurance_server.py   # Fallback insurance data
 │   │   ├── evals.py                   # Pydantic Evals test cases (LLMJudge)
 │   │   └── evals_memory.py            # Memory integration evals
@@ -168,7 +168,7 @@ capstone/
 
 ### Integration & Protocol
 - **[MCP (Model Context Protocol)](https://modelcontextprotocol.io/)** — Standardized interface for agent-server communication
-  - Used to integrate insurance provider directory (realised as a [SQLite](https://sqlite.org/index.html) database) as a tool for the doctor selector agent
+  - Used to integrate insurance provider directory (realised as a [SQLite](https://sqlite.org/index.html) database) as a tool for the doctor fetcher agent
 
 ### Development & Package Management
 - **[UV](https://astral.sh/uv/)** — Fast Python package manager and task runner
@@ -197,8 +197,8 @@ Run all tests for a specific agent:
 # Test Symptoms Triage Agent
 uv run python -m agents.symptoms_triage.evals
 
-# Test Doctor Selector Agent
-uv run python -m agents.doctor_selector.evals
+# Test Doctor Fetcher Agent
+uv run python -m agents.doctor_fetcher.evals
 
 # Test Appointment Requester Agent
 uv run python -m agents.appointment_requester.evals
@@ -243,7 +243,7 @@ In a separate terminal, setup the insurance directory database:
 uv run python -m servers.insurance_directory
 ```
 
-This adds all the insurance doctor network data into the MCP's database. The `doctor_selector` agent will call the `fetch_doctors` tool on the MCP.
+This adds all the insurance doctor network data into the MCP's database. The `doctor_fetcher` agent will call the `fetch_doctors` tool on the MCP.
 
 ### Step 3: Start Phoenix Observability (Optional but Recommended)
 
@@ -298,11 +298,11 @@ I hope this email finds you well. I am writing to request an appointment...
 ### Monitoring with Phoenix
 
 While the system is running (Step 4), open `http://localhost:6006` in your browser to see:
-- **Agent traces**: One trace per agent run (symptoms triage, doctor selector, appointment requester)
+- **Agent traces**: One trace per agent run (symptoms triage, doctor fetcher, appointment requester)
 - **LLM spans**: Detailed spans for each Claude API call showing:
   - Prompt tokens and completion tokens
   - Latency (time to first token, total time)
-  - Tool use (doctor selector's `fetch_doctors` call)
+  - Tool use (doctor fetcher's `fetch_doctors` call)
   - Full request/response payloads
 - **System performance**: Token efficiency, error rates, latency trends
 

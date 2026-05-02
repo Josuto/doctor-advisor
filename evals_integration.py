@@ -32,13 +32,13 @@ class HappyPathOutput:
 async def sut(input: HappyPathInput) -> HappyPathOutput:
     """System under test: orchestrates the happy path workflow"""
     from agents.symptoms_triage.main import answer_query
-    from agents.doctor_selector.main import fetch_doctors_from
+    from agents.doctor_fetcher.main import fetch_doctors_from
     from agents.appointment_requester.main import select_doctor_from, create_appointment_request_email
     from agents.symptoms_triage.utils import store_diagnostics_in_vector_database
 
     with patch("builtins.input") as mock_input, \
          patch("agents.symptoms_triage.main.answer_query", new_callable=AsyncMock) as mock_answer, \
-         patch("agents.doctor_selector.main.fetch_doctors_from", new_callable=AsyncMock) as mock_fetch, \
+         patch("agents.doctor_fetcher.main.fetch_doctors_from", new_callable=AsyncMock) as mock_fetch, \
          patch("agents.appointment_requester.main.select_doctor", return_value=input.available_doctors[input.selected_doctor_index]):
 
         mock_input.return_value = input.symptom_query

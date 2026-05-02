@@ -32,7 +32,7 @@ _mock_agent = Agent(
 
 async def sut(diagnostics: List[Diagnostic]) -> List[Doctor]:
     with patch("builtins.input", return_value="y"), \
-         patch("agents.doctor_selector.main.agent", _mock_agent):
+         patch("agents.doctor_fetcher.main.agent", _mock_agent):
         return await fetch_doctors_from(diagnostics)
 
 
@@ -57,7 +57,7 @@ class DoctorFieldsMatch(Evaluator[List[Diagnostic], List[Doctor]]):
 
 
 dataset: Dataset[List[Diagnostic], List[Doctor], None] = Dataset(
-    name="doctor_selector_evals",
+    name="doctor_fetcher_evals",
     cases=[
         # Happy path: A respiratory diagnostic should surface both neumology doctors.
         # Both Dr. John Smith and Dr. Jane Doe specialise in NEUMOLOGY.
