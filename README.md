@@ -1,10 +1,10 @@
-# Capstone: Multi-Agent Doctor Recommendation System
+# Multi-Agent Doctor Advisor
 
 ## Introduction
 
 This project demonstrates a **multi-agent AI system** that helps people with medical insurance get personalized doctor recommendations and appointment templates. The workflow is:
 
-1. **Patient provides symptoms** → The system asks "Which illness causes...?" and stores the query
+1. **Patient provides symptoms** → The system requests the patient to introduce their symptoms and stores the query
 2. **Symptoms Triage Agent** → Analyzes symptoms and generates a list of relevant diagnostics using retrieval-augmented generation (RAG)
 3. **Doctor Selector Agent** → Matches diagnostics to doctors from the patient's insurance network
 4. **Patient selects a doctor** → Interactive selection from recommended list
@@ -82,11 +82,11 @@ capstone/
 ├── README.md                          # This file
 ├── main.py                            # Agent orchestration entrypoint
 ├── pyproject.toml                     # Dependencies and project config
+├── observability.py                   # Phoenix OTEL setup
 ├── system_architecture.svg            # Architecture diagram
 │
 ├── agents/                            # Agent implementations
 │   ├── __init__.py
-│   ├── observability.py               # Phoenix OTEL setup
 │   │
 │   ├── shared/
 │   │   ├── __init__.py
@@ -172,7 +172,7 @@ capstone/
 
 ### Development & Package Management
 - **[UV](https://astral.sh/uv/)** — Fast Python package manager and task runner
-- **Python 3.13+** — Modern Python for type hints and async/await
+- **Python 3.13** — Modern Python for type hints and async/await
 
 ---
 
@@ -214,7 +214,7 @@ Each test runs through the agent's logic and uses `LLMJudge` to evaluate outputs
 ## Running the Project
 
 ### Prerequisites
-- Python 3.13+
+- Python 3.13
 - `uv` package manager (install via `curl -LsSf https://astral.sh/uv/install.sh | sh`)
 
 ### Step 1: Install Dependencies
@@ -228,6 +228,12 @@ This installs all dependencies from `pyproject.toml` including:
 - ChromaDB and Sentence Transformers (for RAG)
 - Arize Phoenix (for observability)
 - Presidio (for PII redaction)
+
+To make sure you are using Python 3.13 execute:
+
+```bash
+uv venv --python 3.13
+```
 
 ### Step 2: Setup the Insurance Directory Database
 
@@ -268,20 +274,22 @@ The system will:
 ### Example Interaction
 
 ```
-🤔 Please explain your symptoms: I have been feeling very feverish and my muscles are aching all over.
+😷 Please explain your symptoms: I have been feeling very feverish and my muscles are aching all over.
 
-✅ Generated diagnostics:
+📚 Generated diagnostics:
   - Influenza: A viral infection that attacks your respiratory system...
 
 Would you like to see a list of recommended doctors? (y/n): y
 
-👨‍⚕️ Available doctors:
+🚑 Available doctors:
   1. Dr. Sarah Chen (Infectious Disease)
   2. Dr. James Martinez (Neumology)
 
 Select a doctor: 1
 
 📧 Generated email content:
+
+--------------------------------------------------------------------------------
 Dear Dr. Sarah Chen,
 
 I hope this email finds you well. I am writing to request an appointment...
