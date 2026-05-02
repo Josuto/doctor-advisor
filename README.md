@@ -1,4 +1,4 @@
-# Multi-Agent Doctor Advisor
+# Doctor Advisor
 
 ## Introduction
 
