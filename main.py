@@ -4,7 +4,7 @@ from agents.doctor_fetcher import fetch_doctors_from
 from agents.appointment_requester import select_doctor_from, create_appointment_request_email
 from observability import init_telemetry
 
-init_telemetry(project_name="doctor-recommender")
+init_telemetry(project_name="doctor-advisor")
 
 async def main():
   query, diagnostics = await generate_patient_diagnostics()
