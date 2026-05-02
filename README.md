@@ -394,7 +394,7 @@ While the system is running (Step 4), open `http://localhost:6006` in your brows
 3. **User Selection**: Allow patient to select one of the three offered times
 4. **Automatic Booking**: Create the appointment in the doctor's agenda through the MCP server
 
-#### Primary Challenge: Concurrent Appointment Handling
+**Primary Challenge: Concurrent Appointment Handling**
 - **Race Condition Prevention**: Use database-level locking or optimistic concurrency control when booking slots
   - Implement version-based concurrency: Include a revision number in time slot data; increment on each booking
   - Detect conflicts when multiple users attempt to book the same slot simultaneously
