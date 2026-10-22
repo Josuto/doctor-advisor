@@ -46,7 +46,7 @@ The system main technologies are **Pydantic AI** for agent orchestration, **Pyda
 The project implements a **sequential multi-agent pattern** where three specialized agents coordinate to solve a complex workflow:
 
 ```
-User Input (Symptoms) 
+User Input (Symptoms)
   ↓
 [Symptoms Triage Agent] → Diagnostics
   ↓
@@ -62,9 +62,10 @@ User Output
 #### Agent Details
 
 **1. Symptoms Triage Agent** (`agents/symptoms_triage/`)
+
 - **Purpose**: Extract relevant medical diagnostics from patient symptoms
-- **Implementation**: Pydantic AI agent with Claude Sonnet 4.5
-- **RAG Integration**: 
+- **Implementation**: Pydantic AI agent with Claude Sonnet 4.6
+- **RAG Integration**:
   - Embeds user queries using sentence transformers
   - Retrieves similar diagnostics from ChromaDB vector store
   - Augments LLM prompt with retrieved context for accuracy
@@ -74,8 +75,9 @@ User Output
 - **Testing**: Eval-driven with Pydantic Evals (`agents/symptoms_triage/evals.py` uses `LLMJudge` and the `EqualsExpected` built-in evaluators)
 
 **2. Doctor Fetcher Agent** (`agents/doctor_fetcher/`)
+
 - **Purpose**: Match diagnostics to appropriate doctors from the patient's insurance network
-- **Implementation**: Pydantic AI agent with Claude Sonnet 4.5
+- **Implementation**: Pydantic AI agent with Claude Sonnet 4.6
 - **MCP Integration**: Uses Model Context Protocol to communicate with insurance server
   - Calls `fetch_doctors` tool via MCP stdio connection
   - Retrieves doctor list filtered by insurance coverage and specialization
@@ -84,8 +86,9 @@ User Output
 - **Testing**: Eval-driven with Pydantic Evals (`agents/doctor_fetcher/evals.py` uses a `DoctorFieldsMatch` custom evaluator)
 
 **3. Appointment Requester Agent** (`agents/appointment_requester/`)
+
 - **Purpose**: Generate professional email content for appointment requests
-- **Implementation**: Pydantic AI agent with Claude Sonnet 4.5
+- **Implementation**: Pydantic AI agent with Claude Sonnet 4.6
 - **Input**: Original patient query + selected doctor details
 - **Output**: Email template with placeholder for patient name and phone
 - **Testing**: Eval-driven with Pydantic Evals (`agents/appointment_requester/evals.py` uses `LLMJudge` built-in evaluator)
@@ -95,56 +98,56 @@ User Output
 ```mermaid
 graph TD
     UserInput["👤 User inputs <br/>symptoms"]
-        
+
     STAgent["🏥 Symptoms Triage<br/>Agent"]
     DiagnosticsOutput["Diagnostics:<br/>List[Diagnostic]"]
-    
+
     DFAgent["👨‍⚕️ Doctor Fetcher<br/>Agent"]
     DoctorsOutput["Doctors:<br/>List[Doctor]"]
-    
+
     UserSelect["👤 User<br/>Selects"]
     DoctorOutput["Doctor:<br/>Doctor"]
-    
+
     ARAgent["📧 Appointment<br/>Requester Agent"]
-    
+
     FinalOutput["📨 Output<br/>Email<br/>Content"]
-    
+
     ChromaDB["💾 ChromaDB<br/>Diagnostics<br/>Collection"]
     PatientMemory["📝 Patient Memory<br/>Query History"]
     MCPServer["🔌 MCP Server<br/>Insurance<br/>Network"]
     Phoenix["📊 Arize<br/>Phoenix"]
     AnthropicAPI["🤖 Anthropic<br/>API"]
-    
+
     UserInput --> STAgent
-    
+
     ChromaDB -->|"Retrieve relevant<br/>diagnostics"| STAgent
     STAgent -->|"Store/retrieve query with<br/>PII reduced"| PatientMemory
     STAgent --> DiagnosticsOutput
-    
+
     DiagnosticsOutput --> DFAgent
     MCPServer -->|"fetch_doctors<br/>tool"| DFAgent
     DFAgent --> DoctorsOutput
-    
+
     DoctorsOutput --> UserSelect
     UserSelect --> DoctorOutput
-    
+
     DoctorOutput --> ARAgent
     ARAgent --> FinalOutput
-    
+
     STAgent -.->|"monitor"| Phoenix
     DFAgent -.->|"monitor"| Phoenix
     ARAgent -.->|"monitor"| Phoenix
-    
+
     STAgent -.->|"query"| AnthropicAPI
     DFAgent -.->|"query"| AnthropicAPI
     ARAgent -.->|"query"| AnthropicAPI
-    
+
     classDef userNode fill:#b3d9ff,stroke:#333
     classDef agentNode fill:#b3ffb3,stroke:#333
     classDef dataNode fill:#ffffb3,stroke:#333
     classDef externalNode fill:#ffcccc,stroke:#333
     classDef processNode fill:#e6ccff,stroke:#333
-    
+
     class UserInput,UserSelect,FinalOutput userNode
     class STAgent,DFAgent,ARAgent agentNode
     class DiagnosticsOutput,DoctorsOutput,DoctorOutput dataNode
@@ -153,6 +156,7 @@ graph TD
 ```
 
 The diagram shows:
+
 - **Agent pipeline** flowing from symptoms → diagnostics → doctors → email
 - **External systems**: Anthropic API (LLM), ChromaDB (vector store), MCP insurance server
 - **Observability**: Arize Phoenix traces all LLM calls with token counts and latency
@@ -207,53 +211,60 @@ capstone/
 
 **Key Files & Directories:**
 
-| Path | Purpose |
-|------|---------|
-| `main.py` | Entry point: orchestrates all three agents in sequence |
-| `agents/observability.py` | Initializes Arize Phoenix OTEL tracing for runtime monitoring |
-| `agents/shared/models.py` | Pydantic models: `Diagnostic`, `Doctor`, `Speciality` enum |
-| `agents/symptoms_triage/diagnostics.md` | Medical knowledge base (markdown) with definitions & symptoms |
-| `agents/symptoms_triage/chroma_db/` | Persistent vector store of diagnostic embeddings |
-| `agents/symptoms_triage/patient_memories.json` | Patient query history (PII-redacted) for context |
-| `agents/*/evals.py` | Pydantic Evals test suites (LLMJudge for semantic evaluation) |
-| `servers/insurance_directory.py` | MCP server providing doctor/insurance data via stdio |
+| Path                                           | Purpose                                                       |
+| ---------------------------------------------- | ------------------------------------------------------------- |
+| `main.py`                                      | Entry point: orchestrates all three agents in sequence        |
+| `agents/observability.py`                      | Initializes Arize Phoenix OTEL tracing for runtime monitoring |
+| `agents/shared/models.py`                      | Pydantic models: `Diagnostic`, `Doctor`, `Speciality` enum    |
+| `agents/symptoms_triage/diagnostics.md`        | Medical knowledge base (markdown) with definitions & symptoms |
+| `agents/symptoms_triage/chroma_db/`            | Persistent vector store of diagnostic embeddings              |
+| `agents/symptoms_triage/patient_memories.json` | Patient query history (PII-redacted) for context              |
+| `agents/*/evals.py`                            | Pydantic Evals test suites (LLMJudge for semantic evaluation) |
+| `servers/insurance_directory.py`               | MCP server providing doctor/insurance data via stdio          |
 
 ---
 
 ## Tech Stack
 
 ### Core Framework & AI
+
 - **[Pydantic AI](https://docs.pydantic.dev/latest/concepts/agents/)** — Lightweight agent framework with type-safe tool use and structured outputs
-- **[Claude (Anthropic)](https://www.anthropic.com/)** — Claude Sonnet 4.5 model powers all three agents
+- **[Claude (Anthropic)](https://www.anthropic.com/)** — Claude Sonnet 4.6 model powers all three agents
 - **[Pydantic](https://docs.pydantic.dev/)** — Data validation and structured outputs for all agent inputs/outputs
 
 ### Retrieval-Augmented Generation (RAG)
+
 - **[ChromaDB](https://www.trychroma.com/)** — Vector database for diagnostic embeddings and semantic search
 - **[Sentence Transformers](https://www.sbert.net/)** — `all-MiniLM-L6-v2` model for embedding patient symptoms and diagnostics
 - **[LangChain Text Splitters](https://python.langchain.com/)** — Chunking diagnostics for optimal vector retrieval
 
 ### Testing & Evaluation
+
 - **[Pydantic Evals](https://github.com/pydantic/evals)** — Eval-driven development framework
   - `LLMJudge` evaluator for semantic correctness of agent outputs
   - `EqualsExpected` evaluator for deterministic cases (empty lists)
 
 ### Observability
+
 - **[Arize Phoenix](https://phoenix.arize.com/)** — Open-source LLM observability platform
   - `arize-phoenix-otel` — OTEL integration for trace collection
   - `openinference-instrumentation-anthropic` — Traces all Anthropic SDK calls (used by pydantic-ai internally)
   - Real-time visibility into LLM tokens, latency, and tool use
 
 ### Data Privacy & Security
+
 - **[Presidio](https://microsoft.github.io/presidio/)** — PII detection and anonymization
   - `presidio-analyzer` — Detects emails, phone numbers in patient queries
   - `presidio-anonymizer` — Redacts PII before storing in memory
 - **[Email Validator](https://github.com/JoshData/python-email-validator)** — Email validation for appointment requests
 
 ### Integration & Protocol
+
 - **[MCP (Model Context Protocol)](https://modelcontextprotocol.io/)** — Standardized interface for agent-server communication
   - Used to integrate insurance provider directory (realised as a [SQLite](https://sqlite.org/index.html) database) as a tool for the doctor fetcher agent
 
 ### Development & Package Management
+
 - **[UV](https://astral.sh/uv/)** — Fast Python package manager and task runner
 - **Python 3.13** — Modern Python for type hints and async/await
 
@@ -266,6 +277,7 @@ This project uses **Pydantic Evals** with **eval-driven development**: agents ar
 ### Test Cases
 
 Each agent has its own test suite evaluating:
+
 - **Happy paths**: Known symptoms → correct diagnostics/doctors
 - **Shared concepts**: Symptoms appearing in multiple diagnostics
 - **Edge cases**: Nonexistent symptoms → empty results
@@ -288,6 +300,7 @@ uv run python -m agents.appointment_requester.evals
 ```
 
 Each test runs through the agent's logic and uses `LLMJudge` to evaluate outputs semantically. The evaluator checks:
+
 - **Symptoms Triage**: Output contains relevant diagnostics with correct definitions
 - **Doctor Selector**: Output contains appropriate doctors from insurance network
 - **Appointment Requester**: Output is a well-formed email template
@@ -297,6 +310,7 @@ Each test runs through the agent's logic and uses `LLMJudge` to evaluate outputs
 ## Running the Project
 
 ### Prerequisites
+
 - Python 3.13
 - `uv` package manager (install via `curl -LsSf https://astral.sh/uv/install.sh | sh`)
 
@@ -307,6 +321,7 @@ uv sync
 ```
 
 This installs all dependencies from `pyproject.toml` including:
+
 - Pydantic AI and Evals
 - ChromaDB and Sentence Transformers (for RAG)
 - Arize Phoenix (for observability)
@@ -347,6 +362,7 @@ uv run main.py
 ```
 
 The system will:
+
 1. Initialize Phoenix tracing
 2. Prompt for patient symptoms
 3. Extract diagnostics from symptoms (with RAG + memory context)
@@ -381,6 +397,7 @@ I hope this email finds you well. I am writing to request an appointment...
 ### Monitoring with Phoenix
 
 While the system is running (Step 4), open `http://localhost:6006` in your browser to see:
+
 - **Agent traces**: One trace per agent run (symptoms triage, doctor fetcher, appointment requester)
 - **LLM spans**: Detailed spans for each Claude API call showing:
   - Prompt tokens and completion tokens
@@ -427,6 +444,7 @@ While the system is running (Step 4), open `http://localhost:6006` in your brows
 **Objective**: Enable concurrent multi-user access to the system while maintaining data privacy and user isolation.
 
 **Requirements**:
+
 - **User Authentication**: Implement login/session management (e.g., OAuth, JWT tokens) to identify and authenticate users
 - **Per-User Memory Isolation**: Replace the global `patient_memories.json` with per-user query history storage
   - Associate each patient query with a unique user ID
@@ -438,6 +456,7 @@ While the system is running (Step 4), open `http://localhost:6006` in your brows
 - **Database Refactoring**: Migrate from JSON file storage to a multi-tenant database (e.g., PostgreSQL with user-scoped queries)
 
 **Implementation Considerations**:
+
 - Use Pydantic AI's context injection to pass user identity through the agent pipeline
 - Implement encryption for sensitive user data at rest and in transit
 - Add audit logging for compliance (HIPAA, GDPR)
@@ -447,12 +466,14 @@ While the system is running (Step 4), open `http://localhost:6006` in your brows
 **Objective**: Extend the Appointment Requester Agent to automatically schedule appointments by checking doctor availability and booking time slots.
 
 **Workflow**:
+
 1. **Fetch Available Time Slots**: After doctor selection, query the doctor's calendar via MCP server
 2. **Present Options**: Display the next three available appointment time slots to the user
 3. **User Selection**: Allow patient to select one of the three offered times
 4. **Automatic Booking**: Create the appointment in the doctor's agenda through the MCP server
 
 **Primary Challenge: Concurrent Appointment Handling**
+
 - **Race Condition Prevention**: Use database-level locking or optimistic concurrency control when booking slots
   - Implement version-based concurrency: Include a revision number in time slot data; increment on each booking
   - Detect conflicts when multiple users attempt to book the same slot simultaneously
@@ -467,6 +488,7 @@ While the system is running (Step 4), open `http://localhost:6006` in your brows
 - **Idempotency**: Use idempotent keys (e.g., `appointment_request_id`) to prevent duplicate bookings if requests are retried
 
 **Implementation Considerations**:
+
 - Use Pydantic AI's tool error handling to gracefully manage booking failures
 - Implement a state machine in the agent to track appointment booking progress
 - Add Phoenix tracing to monitor concurrent booking attempts and detect race conditions
@@ -474,6 +496,7 @@ While the system is running (Step 4), open `http://localhost:6006` in your brows
 - Extend the shared models to include `Appointment` with booking status tracking
 
 **Technical Challenges**:
+
 - **Scalability**: Supporting many concurrent users requires efficient locking and database indexing
 - **Network Failures**: Handle partial failures (e.g., slot reserved but booking fails)
 - **User Experience**: Balance automatic confirmation with explicit user consent for medical appointments

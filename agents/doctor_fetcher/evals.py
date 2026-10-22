@@ -23,7 +23,7 @@ _mock_server = MCPServerStdio(
 )
 
 _mock_agent = Agent(
-    model="anthropic:claude-sonnet-4-5",
+    model="anthropic:claude-sonnet-4-6",
     system_prompt=system_prompt,
     toolsets=[_mock_server],
     output_type=List[Doctor],

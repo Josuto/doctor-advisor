@@ -21,7 +21,7 @@ system_prompt = f""""
 
 # Create an agent using Claude model
 agent = Agent(
-    model="anthropic:claude-sonnet-4-5",
+    model="anthropic:claude-sonnet-4-6",
     system_prompt=system_prompt,
     output_type=str
 )
